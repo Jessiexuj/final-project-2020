@@ -1,0 +1,182 @@
+```{r}
+fromG=read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSUTk1C_hjJFVfk-MeQvPBdqzg0i7WQOMnOH-641mFS-PfPNDXKjo3TL0P0NraEP6-VtSntguPiLaff/pub?output=csv", na.strings="#N/A)")
+
+fromG
+```
+```{r}
+mapLink="https://github.com/Jessiexuj/final-project-2020/raw/master/ne_10m_admin_0_countries.json"
+```
+```{r}
+library(geojsonio)
+
+```
+```{r}
+PROJmap="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+worldMap=topojson_read(mapLink,crs=PROJmap,stringsAsFactors = FALSE)
+```
+```{r}
+library(lwgeom)
+```
+
+```{r}
+worldMap=st_make_valid(worldMap)
+```
+
+```{r}
+library(rmapshaper)
+```
+```{r}
+library(ggplot2)
+```
+```{r}
+ggplot(data=worldMap) + geom_sf()
+```
+```{r}
+layerContrib=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib1=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib2=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib3=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib4=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib5=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+
+layerContrib6=merge(worldMap,fromG, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F) # if no coincidence don't keep shape.
+```
+```{r}
+ggplot(layerContrib) + geom_sf()
+```
+```{r}
+library(RColorBrewer)
+library(tmap)
+```
+```{r}
+numberOfClasses = 5
+```
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib$cut=cut_number(layerContrib$MCONCORRUPTION,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer=ggplot(data = worldMap) +geom_sf() 
+layer1 = baseLayer + geom_sf(data = layerContrib, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Corruption")
+layer1    
+```
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib1$cut=cut_number(layerContrib1$MGEFFECTIVE,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer1=ggplot(data = worldMap) +geom_sf() 
+layer2 = baseLayer1 + geom_sf(data = layerContrib1, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Gov Effectiveness")
+layer2    
+```
+
+
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib2$cut=cut_number(layerContrib2$MGEFFECTIVE,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer2=ggplot(data = worldMap) +geom_sf() 
+layer3 = baseLayer2 + geom_sf(data = layerContrib2, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Regulation Quality")
+layer3    
+```
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib3$cut=cut_number(layerContrib3$MGEFFECTIVE,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer3=ggplot(data = worldMap) +geom_sf() 
+layer4 = baseLayer3 + geom_sf(data = layerContrib3, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Rule of Law")
+layer4    
+```
+
+```{r}
+numberOfClasses = 5
+```
+
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib5$cut=cut_number(layerContrib5$MSTABILITY,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer5=ggplot(data = worldMap) +geom_sf() 
+layer6 = baseLayer5 + geom_sf(data = layerContrib5, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Stability")
+layer6    
+```
+```{r}
+colorForScale='Spectral'
+```
+
+```{r}
+layerContrib6$cut=cut_number(layerContrib6$MSTABILITY,numberOfClasses,
+                            ordered_result=T,
+                            dig.lab=5)
+```
+```{r}
+baseLayer6=ggplot(data = worldMap) +geom_sf() 
+layer7 = baseLayer6 + geom_sf(data = layerContrib6, aes(fill=cut),color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Voice & Accountability")
+layer7    
+```
