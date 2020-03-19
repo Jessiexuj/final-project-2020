@@ -1,0 +1,637 @@
+```{r}
+Fdata = read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSUTk1C_hjJFVfk-MeQvPBdqzg0i7WQOMnOH-641mFS-PfPNDXKjo3TL0P0NraEP6-VtSntguPiLaff/pub?gid=0&single=true&output=csv")
+#collecting the data
+```
+
+```{r}
+names(Fdata)
+#seeing the variable names
+```
+
+```{r}
+head(Fdata)
+#checking first rows
+```
+
+```{r}
+str(Fdata)
+#checking the data type
+```
+
+```{r}
+absoluteT=table(Fdata$Freedom.Status)
+absoluteT
+#prepare the variable:Freedom.Status for the pie plot of FreedomStatus proportion
+```
+
+```{r}
+Toplot=prop.table(absoluteT)*100
+Toplot
+#making marginal table
+```
+
+```{r}
+Toplot=as.data.frame(Toplot)
+names(Toplot)=c("FreedomStatus", "Freq")
+#making a data frame and rename
+Toplot
+```
+
+```{r}
+Toplot$FreedomStatus = factor(Toplot$FreedomStatus, levels=c('Not Free', 'Partly Free', 'Free'))
+#reorder FreedomStatus
+```
+
+```{r}
+library(ggplot2)
+library(ggpubr) 
+#introducing libraries
+Labels = lapply(Toplot$Freq, function(x){paste(round(x), '%')}) 
+#creating labels and add "%" following the numbers
+pie = ggplot(Toplot, aes(x='', y=Freq, fill=FreedomStatus)) + 
+  geom_bar(stat='identity', width=1, color='white') +
+  coord_polar('y', start=0) +
+  theme_void() +
+  geom_text(aes(label = Labels), position = position_stack(vjust = 0.5)) + 
+#using ggplot to create a pie plot
+  scale_fill_brewer(palette = "Greens") 
+#change the color, using different color shades to reflect the varying freedom levels(the darker the green, the higher the freedom level)
+pieAnnotated = annotate_figure(pie, 
+                               top=text_grob("FreeStatus Proportion", 
+                                            face = "bold", size = 12),
+                            bottom = text_grob("Data source: FreedomHouse",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),
+                            left = NULL,
+                            right = NULL) 
+#add title and data source of the plot
+pieAnnotated
+```
+
+```{r}
+summary(Fdata$MVACCOUNT)
+#checking statistics
+```
+
+```{r}
+Fdata$MVACCOUNTGroup=cut(Fdata$MVACCOUNT,
+                                 breaks = c (-2.21, -0.84, 0.06, 0.8, 1.74),
+                                 labels = c ('Weak', 'Moderate', 'Good', 'Strong'))
+#breaking the scores of Voice & Accountability into 4 groups by quartiles. We defined that scores below the first quartile are “Weak”, from 1st quartile to the median is “Moderate”, median to the third quartile is “Good”, and the scores above 3rd quartile are “Strong”. 
+```
+
+```{r}
+table(Fdata$MVACCOUNTGroup)
+#observing the grouping result
+```
+
+```{r}
+FreedomVA = table(Fdata$Freedom.Status, Fdata$MVACCOUNTGroup)
+FreedomVA
+#contingency table of counts
+```
+
+```{r}
+(PercVA_mgCol=prop.table(FreedomVA,
+                            margin = 2))
+#computing marginal percent (per column) from contigency table
+```
+
+```{r}
+PercVA=as.data.frame(FreedomVA)
+names(PercVA) = c ('FreedomStatus', 'Voice_Accountability', 'counts')
+#making a data frame from contingency table and rename
+PercVA$pctCol=as.data.frame(PercVA_mgCol)[,3]
+#adding marginal percents
+head(PercVA)
+#head of data frame representing contingency table and marginals
+```
+
+```{r}
+PercVA$Var1 = factor(PercVA$FreedomStatus, levels=c('Not Free', 'Partly Free', 'Free'))
+#reorder FreedomStatus
+```
+
+```{r}
+base1=ggplot(data=PercVA, 
+             aes(x=FreedomStatus,y=counts,fill=Voice_Accountability)) #variables needed
+
+barDodge= base1 +  geom_bar(stat="identity",
+                            position="dodge")
+
+barDodge= barDodge + geom_text(position = position_dodge(width = 0.9),
+                               angle=90,
+                               hjust=1,
+                               aes(label=counts))#add number of countries on each bar
+```
+
+```{r}
+onecolor=barDodge + scale_fill_brewer(palette = "Blues")
+free1 = onecolor + theme_classic()
+#change the color, using different color shades to reflect each score group (the darker the blue, the stronger/higher score the group is)
+```
+
+```{r}
+title1 = annotate_figure(free1,
+                            top = text_grob("The Proportion of Voice_Accountability Score Group in Different FreedomStatus", 
+                                            face = "bold", size = 12),#add title to the top of the plot and adjust font and size
+                            bottom = text_grob("Data source: FreedomHouse & WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust font and size
+                            left = NULL,
+                            right = NULL)
+title1
+#showing the plot
+```
+
+
+```{r}
+library(scales)
+base3 = ggplot(PercVA, aes(x=Voice_Accountability,y=FreedomStatus)) 
+#plot value as point, size by value of percent
+tablePlot = base3 + geom_point(aes(size = pctCol*100)) 
+#add value of percent as label
+tablePlot = tablePlot + geom_text(aes(label = percent(pctCol)),
+                                    nudge_x = 0.2,
+                                    size=3)#add label and adjust size
+```
+
+```{r}
+title2 = annotate_figure(tablePlot,
+                            top = text_grob("The Percentages of Different FreedomStatus in each Voice_Accountability Score Group",
+                                            face = "bold", size = 10),#add title to the top of plot and adjust the font and size
+                           bottom = text_grob("Data source: FreedomHouse & WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+title2
+```
+
+```{r}
+summary(Fdata$MROL)
+#checking statistics
+```
+
+```{r}
+Fdata$MROLGroup=cut(Fdata$MROL,
+                    breaks = c (-2.34, -0.69, -0.13, 0.76, 2.05),
+                    labels = c ('Weak', 'Moderate', 'Good', 'Strong'))
+#breaking the scores of Rule of Law into 4 groups by their quartiles. We defined that scores below the first quartile are “Weak”, from 1st quartile to the median is “Moderate”, median to the third quartile is “Good”, and the scores above 3rd quartile are “Strong”. 
+```
+
+```{r}
+table(Fdata$MROLGroup)
+#observing the grouping result
+```
+
+```{r}
+FreedomROL = table(Fdata$Freedom.Status, Fdata$MROLGroup)
+FreedomROL
+#contingency table of counts
+```
+
+```{r}
+(PercROL_mgCol=prop.table(FreedomROL,
+                            margin = 2))
+#computing marginal percent (per column) from contigency table
+```
+
+```{r}
+PercROL=as.data.frame(FreedomROL)
+names(PercROL) = c ('FreedomStatus', 'RuleofLaw', 'counts')
+#making a data frame from contingency table and rename
+PercROL$pctCol=as.data.frame(PercROL_mgCol)[,3]
+#adding marginal percents
+head(PercROL)
+```
+
+```{r}
+PercROL$FreedomStatus = factor(PercROL$FreedomStatus, levels=c('Not Free', 'Partly Free', 'Free'))
+#reorder FreedomStatus
+```
+
+```{r}
+base2=ggplot(data=PercROL, 
+             aes(x=FreedomStatus,y=counts,fill=RuleofLaw))#variables needed
+
+barDodge2= base2 +  geom_bar(stat="identity",
+                            position="dodge")
+
+barDodge2= barDodge2 + geom_text(position = position_dodge(width = 0.9),
+                               angle=90,
+                               hjust=1,
+                               aes(label=counts)) #add number of countries on each bar
+```
+
+```{r}
+onecolor2=barDodge2 + scale_fill_brewer(palette = "Blues")
+free2 = onecolor2 + theme_classic()
+#change the color, using different color shades to reflect each score group (the darker blue, the stronger/higher score the group is)
+```
+
+```{r}
+title3 = annotate_figure(free2,
+                            top = text_grob("The Proportion of Rule of Law Score Group in Different FreedomStatus",
+                                            face = "bold", size = 12),#add title to the top of plot and adjust font and size
+                           bottom = text_grob("Data source: FreedomHouse & WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust font and size
+                            left = NULL,
+                            right = NULL)
+title3
+#showing the plot
+```
+
+```{r}
+base4 = ggplot(PercROL, aes(x=RuleofLaw,y=FreedomStatus)) 
+# plot value as point, size by value of percent
+tablePlot = base4 + geom_point(aes(size = pctCol*100)) 
+# add value of Percent as label
+tablePlot = tablePlot + geom_text(aes(label = percent(pctCol)),
+                                    nudge_x = 0.2,
+                                    size=3)
+```
+
+```{r}
+title4 = annotate_figure(tablePlot,
+                            top = text_grob("The Percentages of Different FreedomStatus in each Rule of Law Score Group",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: FreedomHouse & WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+title4
+```
+
+## Part 2 
+```{r}
+#get data
+fileMVAC=Fdata[,c(2,3,4,5,6,7,8,9)]
+```
+
+```{r}
+#rename variables for later use
+
+names(fileMVAC)=c("FreedomStatus","Freedom.Status.Number","VoiceAccountability",'RuleofLaw','Stability','Effectiveness',"Regulation","Corrupt_Control")
+
+head(fileMVAC) #check data
+```
+
+
+```{r}
+#cut the variable as illustrated above into 4 groups based on quartiles 
+Voice_Accountability=cut(fileMVAC$VoiceAccountability,
+                  breaks=c(-2.21,-0.84,0.06,0.8,1.74),
+                  labels=c("Weak", "Moderate","Good","Strong"))
+```
+
+```{r}
+#cut the variable as illustrated above into 4 groups based on quartiles 
+Rule_of_Law=cut(fileMVAC$RuleofLaw,
+            breaks = c(-2.34,-0.69,-0.13,0.76,2.05),
+            labels = c("Weak", "Moderate","Good", "Strong"))
+```
+
+```{r}
+#contingency table for counts
+MVACCOUNT_MROL=table(Voice_Accountability,Rule_of_Law)
+MVACCOUNT_MROL
+```
+
+```{r}
+#a crude illustraton of how each group of Voice and Accountability scores in Rule of Law
+
+base=ggplot(data=fileMVAC,
+            aes(x=Voice_Accountability,y=RuleofLaw))
+```
+
+```{r}
+# the distribution of maximum scores of Rule of Law scores across four categories of Voice and Accountability
+
+base  = ggplot(fileMVAC,aes(x=Voice_Accountability, y=RuleofLaw)) + labs(title = "Relationship between Rule of Law and Voice and Accountability",caption = "Source: WGI Group")
+maxs = base + stat_summary(fun = max, # function for 'y' is max()
+                           geom="line",
+                           size=2,
+                           aes(group=1,col='Max'))
+```
+
+```{r}
+#add the line to show the minimum on top of the graph above 
+minsMaxs= maxs + stat_summary(fun.y=min,
+                              geom="line",
+                              size=2,
+                              aes(group=1,col='Min'))
+```
+
+```{r}
+#Adjust colors and themes to show the trend of how maximum and minimum Rule of Law scores fall into each group of Voice and Accountability 
+
+all1=minsMaxs + scale_colour_manual(name="Stats",
+                                      values=c("red3", "green4") #alphabetic
+                                      )
+all1 + theme_minimal()
+```
+
+```{r}
+#MEAN of Voice and Accountability scores by Freedom Status
+MVACCOUNTByFree=aggregate(data=fileMVAC,VoiceAccountability~FreedomStatus,mean)
+
+# you have:
+head(MVACCOUNTByFree)
+```
+
+```{r}
+#MEAN of Rule of Law scores by Freedom Status
+MROLByFree=aggregate(data=fileMVAC,RuleofLaw~FreedomStatus,mean)
+
+# you have:
+head(MROLByFree)
+```
+
+```{r}
+num_num=merge(MVACCOUNTByFree,MROLByFree) # 'Freedom Status' is the "key"
+#check after merge:
+str(num_num)
+```
+
+```{r}
+num_num$FreedomStatus=as.character(num_num$FreedomStatus)
+```
+
+```{r}
+#show the relationship between Rule of Law and Voice and Accountability by observing the slope 
+
+base = ggplot(num_num, aes(x=VoiceAccountability,y=RuleofLaw,colors(distinct = FALSE))) + labs(title="Relationship between Voice and Accountability and Rule of Law", caption="Source: WGI Group")
+plot1= base +  geom_line(col='orange') 
+plot1 + theme_minimal()
+```
+
+```{r}
+library(reshape2)
+```
+
+```{r}
+#get data for only the variables used in later steps
+fileMVAC1=fileMVAC[,c(1,3,4,5,6,7,8)]
+```
+
+```{r}
+fileMVAC2=melt(fileMVAC1, # all the data
+           id.vars = 'FreedomStatus') # the unit of analysis (unique)
+head(fileMVAC2)
+```
+
+```{r}
+# A tile graph to show how countries in each freedom category scores across all six governance indicators 
+
+fileMVAC2$FreedomStatus = factor(fileMVAC2$FreedomStatus, levels=c('Not Free', 'Partly Free', 'Free')) 
+base = ggplot(data = fileMVAC2, aes(x = variable,
+                                y =FreedomStatus)) + labs(title="Governance Indicators VS Freedom Status", caption="Source: WGI group")
+
+heat1= base +  geom_tile(aes(fill = value)) 
+heat1
+```
+
+```{r}
+# a radar graph to again observe the pattern of how each governance indicator weighs in each freedom status. 
+
+fileMVAC2$FreedomStatus = factor(fileMVAC2$FreedomStatus, levels=c('Not Free', 'Partly Free', 'Free'))
+base  = ggplot(fileMVAC2, aes(x = variable, y = value, group = FreedomStatus))+ labs(title="Governance Indicators VS Freedom Status", caption="Source: WGI group")
+
+plot1 = base + geom_polygon(fill = 'grey',col='orange') + coord_polar() 
+
+plot2 = plot1 + facet_wrap(~FreedomStatus,# one plot per freedom status
+                           ncol = 3) # three plots per row
+plot2
+```
+
+```{r}
+mapLink="https://github.com/Jessiexuj/final-project-2020/raw/master/ne_10m_admin_0_countries.json"
+#loading map
+```
+
+```{r}
+library(geojsonio)
+```
+
+```{r}
+PROJmap="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
+worldMap=topojson_read(mapLink,crs=PROJmap,stringsAsFactors = FALSE)
+```
+
+```{r}
+library(lwgeom)
+```
+
+```{r}
+worldMap=st_make_valid(worldMap)
+```
+
+```{r}
+library(rmapshaper)
+```
+
+```{r}
+ggplot(data=worldMap) + geom_sf()
+```
+
+```{r}
+layerContrib=merge(worldMap,Fdata, 
+                   by.x='NAME_EN', 
+                   by.y='Country',
+                   all.x=F)
+#brings together our dataset with the data from the map
+```
+
+```{r}
+library(RColorBrewer)
+library(tmap)
+```
+
+```{r}
+numberOfClasses = 5
+#splits scale into five classes
+```
+
+```{r}
+colorForScale='OrRd'
+```
+
+```{r}
+layerContrib$cutConCor=cut_number(layerContrib$MCONCORRUPTION,
+                               numberOfClasses,
+                               ordered_result=T,
+                               dig.lab=5)
+#enforces those splits onto the data
+```
+
+```{r}
+baseLayer=ggplot(data = worldMap) +geom_sf() 
+layer1 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutConCor),
+                             color=NA,show.legend = T) +
+                  scale_fill_brewer(palette = colorForScale,
+                                   name = "Corruption",
+                                   direction = -1)
+layer1    
+#creates the first map, specifies that the direction of the scale starts in the negative range, subsequent maps use same formula 
+titlea = annotate_figure(layer1,
+                            top = text_grob("Corruption World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titlea
+```
+
+```{r}
+layerContrib$cutMGeff=cut_number(layerContrib$MGEFFECTIVE,
+                                 numberOfClasses,
+                                 ordered_result=T,
+                                 dig.lab=5)
+```
+
+```{r}
+layer2 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutMGeff),
+                             color=NA,show.legend = T) +
+                     scale_fill_brewer(palette = colorForScale,
+                                       name = "Gov Effectiveness",
+                                       direction = -1)
+layer2
+
+titleb = annotate_figure(layer2,
+                            top = text_grob("Government Effectiveness World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titleb
+```
+
+```{r}
+layerContrib$cutMSTAB=cut_number(layerContrib$MSTABILITY,
+                                  numberOfClasses,
+                                  ordered_result=T,
+                                  dig.lab=5)
+```
+
+```{r}
+layer3 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutMSTAB),
+                             color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Political Stability", 
+                                   direction= -1)
+layer3 
+
+titlec = annotate_figure(layer3,
+                            top = text_grob("Political Stability World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titlec
+```
+
+```{r}
+layerContrib$cutMSTAB=cut_number(layerContrib$MREGQUALITY,
+                                  numberOfClasses,
+                                  ordered_result=T,
+                                  dig.lab=5)
+```
+
+```{r}
+layer4 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutMSTAB),
+                             color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Regulatory Quality", 
+                                   direction= -1)
+layer4
+
+titled = annotate_figure(layer4,
+                            top = text_grob("Regulatory Quality World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titled
+```
+
+```{r}
+layerContrib$cutMSTAB=cut_number(layerContrib$MROL,
+                                  numberOfClasses,
+                                  ordered_result=T,
+                                  dig.lab=5)
+```
+
+```{r}
+layer5 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutMSTAB),
+                             color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Rule of Law", 
+                                   direction= -1)
+layer5
+
+titlee = annotate_figure(layer5,
+                            top = text_grob("Rule of Law World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titlee
+```
+
+```{r}
+layerContrib$cutMSTAB=cut_number(layerContrib$MVACCOUNT,
+                                  numberOfClasses,
+                                  ordered_result=T,
+                                  dig.lab=5)
+```
+
+```{r}
+layer6 = baseLayer + geom_sf(data = layerContrib,
+                             aes(fill=cutMSTAB),
+                             color=NA,show.legend = T) +
+                 scale_fill_brewer(palette = colorForScale,
+                                   name = "Voice & Accountability", 
+                                   direction= -1)
+layer6
+
+titlef = annotate_figure(layer6,
+                            top = text_grob("Voice & Accountability World Map",
+                                            face = "bold", size = 12),#add title to the top od the plot and adjust the font and size
+                           bottom = text_grob("Data source: WGI group",
+                                               hjust = 1, x = 1,
+                                               face = "italic", 
+                                               size = 10),#add data source to the bottom of the plot and adjust the font and size
+                            left = NULL,
+                            right = NULL)
+titlef
+```
+
+
